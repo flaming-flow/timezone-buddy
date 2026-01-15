@@ -251,12 +251,11 @@ export function getCurrentTimeInZone(ianaName: string): string {
       timeZone: ianaName,
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit',
       hour12: true,
     });
     return formatter.format(new Date());
   } catch {
-    return '--:--:--';
+    return '--:--';
   }
 }
 

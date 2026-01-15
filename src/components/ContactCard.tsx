@@ -19,9 +19,6 @@ export function ContactCard({
   width,
   height,
 }: ContactCardProps): React.ReactElement {
-  // Extract just the time without seconds
-  const shortTime = person.currentTime.replace(/:\d{2}(?=\s|$)/, '');
-
   const dynamicStyle = width && height ? {width, height} : {};
 
   return (
@@ -54,7 +51,7 @@ export function ContactCard({
       </Text>
 
       {/* Time - large and prominent */}
-      <Text style={styles.time}>{shortTime}</Text>
+      <Text style={styles.time}>{person.currentTime}</Text>
 
       {/* Timezone info */}
       <Text style={styles.offset}>{person.offset}</Text>

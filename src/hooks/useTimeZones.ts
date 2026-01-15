@@ -65,14 +65,14 @@ export function useTimeZones(): UseTimeZonesResult {
   useEffect(() => {
     const updateTimes = () => {
       if (!isPausedRef.current) {
-        setTimeZones(buildDisplayZones(savedZones));
+        // Обновляем только поля времени, не пересоздавая весь объект
+        setTimeZones(prev => prev.map(zone => ({
+          ...zone,
+          currentTime: getCurrentTimeInZone(zone.ianaName),
+          currentDate: getDateInZone(zone.ianaName),
+        })));
       }
     };
-
-    // Update immediately
-    if (savedZones.length > 0 && !isPausedRef.current) {
-      updateTimes();
-    }
 
     // Set up interval to update every second
     intervalRef.current = setInterval(updateTimes, 1000);
@@ -82,7 +82,7 @@ export function useTimeZones(): UseTimeZonesResult {
         clearInterval(intervalRef.current);
       }
     };
-  }, [savedZones, buildDisplayZones]);
+  }, []);
 
   // Pause/resume updates (for drag operations)
   const pauseUpdates = useCallback(() => {

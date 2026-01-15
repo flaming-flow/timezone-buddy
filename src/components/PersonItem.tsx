@@ -13,9 +13,6 @@ export function PersonItem({
   onPress,
   onDelete,
 }: PersonItemProps): React.ReactElement {
-  // Extract just the time without seconds for cleaner display
-  const shortTime = person.currentTime.replace(/:\d{2}(?=\s|$)/, '');
-
   return (
     <TouchableOpacity
       style={styles.container}
@@ -41,7 +38,7 @@ export function PersonItem({
 
       {/* Current time */}
       <View style={styles.timeContainer}>
-        <Text style={styles.time}>{shortTime}</Text>
+        <Text style={styles.time}>{person.currentTime}</Text>
         <Text style={styles.date}>{person.currentDate}</Text>
       </View>
 

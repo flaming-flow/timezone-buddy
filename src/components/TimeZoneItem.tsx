@@ -15,7 +15,7 @@ interface TimeZoneItemProps {
   itemHeight: number;
 }
 
-export function TimeZoneItem({
+export const TimeZoneItem = React.memo(function TimeZoneItem({
   item,
   onDelete,
   itemWidth,
@@ -24,9 +24,6 @@ export function TimeZoneItem({
   const handleDelete = () => {
     onDelete(item.id);
   };
-
-  // Extract just the time without seconds for cleaner display
-  const shortTime = item.currentTime.replace(/:\d{2}(?=\s|$)/, '');
 
   return (
     <View
@@ -38,7 +35,7 @@ export function TimeZoneItem({
         },
       ]}>
       {/* Time - prominent display */}
-      <Text style={styles.time}>{shortTime}</Text>
+      <Text style={styles.time}>{item.currentTime}</Text>
 
       {/* City and details */}
       <View style={styles.details}>
@@ -62,7 +59,14 @@ export function TimeZoneItem({
       </TouchableOpacity>
     </View>
   );
-}
+}, (prevProps, nextProps) => {
+  // Предотвращаем ре-рендер если время и размеры не изменились
+  return prevProps.item.currentTime === nextProps.item.currentTime &&
+         prevProps.item.currentDate === nextProps.item.currentDate &&
+         prevProps.item.id === nextProps.item.id &&
+         prevProps.itemWidth === nextProps.itemWidth &&
+         prevProps.itemHeight === nextProps.itemHeight;
+});
 
 const styles = StyleSheet.create({
   container: {
