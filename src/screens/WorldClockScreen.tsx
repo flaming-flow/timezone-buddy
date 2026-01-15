@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {DragSortableView} from 'react-native-drag-sort';
+import DraggableFlatList, {RenderItemParams, ScaleDecorator} from 'react-native-draggable-flatlist';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {TimeZoneDisplay, PersonDisplay} from '../types';
@@ -29,7 +30,6 @@ const GAP = 16;
 export function WorldClockScreen(): React.ReactElement {
   const [showPicker, setShowPicker] = useState(false);
   const [timeZoneScrollEnabled, setTimeZoneScrollEnabled] = useState(true);
-  const [contactScrollEnabled, setContactScrollEnabled] = useState(true);
   const navigation = useNavigation<NavigationProp>();
   const {timeZones, isLoading, addTimeZone, removeTimeZone, reorderTimeZones, pauseUpdates, resumeUpdates} =
     useTimeZones();
@@ -98,25 +98,27 @@ export function WorldClockScreen(): React.ReactElement {
     navigation.navigate('PersonDetail', {});
   }, [navigation]);
 
-  const handleContactsReorder = useCallback(
-    (data: PersonDisplay[]) => {
-      reorderContacts(data);
-    },
-    [reorderContacts],
-  );
-
   const renderContactItem = useCallback(
-    (item: PersonDisplay) => {
+    ({item, drag, isActive}: RenderItemParams<PersonDisplay>) => {
       return (
-        <ContactCard
-          person={item}
-          onDelete={removeContact}
-          width={contactCardWidth}
-          height={contactCardHeight}
-        />
+        <ScaleDecorator>
+          <TouchableOpacity
+            onLongPress={drag}
+            delayLongPress={80}
+            onPress={() => handleContactPress(item.id)}
+            disabled={isActive}
+            style={{opacity: isActive ? 0.9 : 1, marginBottom: 12}}>
+            <ContactCard
+              person={item}
+              onDelete={removeContact}
+              width={contactCardWidth}
+              height={contactCardHeight}
+            />
+          </TouchableOpacity>
+        </ScaleDecorator>
       );
     },
-    [removeContact, contactCardWidth, contactCardHeight],
+    [removeContact, contactCardWidth, contactCardHeight, handleContactPress],
   );
 
   if (isLoading || isContactsLoading) {
@@ -203,40 +205,20 @@ export function WorldClockScreen(): React.ReactElement {
 
           {/* COL 2: Contacts (20%) */}
           <View style={[styles.sideCol, {width: sideColWidth}]}>
-            <ScrollView
-              scrollEnabled={contactScrollEnabled}
-              style={styles.scrollView}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.scrollContent}>
-              {contacts.length === 0 ? (
-                <View style={styles.emptyContactsContainer}>
-                  <Text style={styles.emptyContactsText}>No contacts yet</Text>
-                </View>
-              ) : (
-                <DragSortableView
-                  dataSource={contacts}
-                  parentWidth={contactCardWidth}
-                  childrenWidth={contactCardWidth}
-                  childrenHeight={contactCardHeight}
-                  marginChildrenTop={0}
-                  marginChildrenBottom={12}
-                  marginChildrenLeft={0}
-                  marginChildrenRight={0}
-                  keyExtractor={(item: PersonDisplay) => item.id}
-                  renderItem={renderContactItem}
-                  onDataChange={handleContactsReorder}
-                  onClickItem={(_data, item) => handleContactPress(item.id)}
-                  onDragStart={() => setContactScrollEnabled(false)}
-                  onDragEnd={() => setContactScrollEnabled(true)}
-                  delayLongPress={150}
-                  isDragFreely={true}
-                  maxScale={1.05}
-                  minOpacity={0.9}
-                  scaleDuration={150}
-                  slideDuration={300}
-                />
-              )}
-            </ScrollView>
+            {contacts.length === 0 ? (
+              <View style={styles.emptyContactsContainer}>
+                <Text style={styles.emptyContactsText}>No contacts yet</Text>
+              </View>
+            ) : (
+              <DraggableFlatList
+                data={contacts}
+                keyExtractor={(item: PersonDisplay) => item.id}
+                renderItem={renderContactItem}
+                onDragEnd={({data}) => reorderContacts(data)}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+              />
+            )}
           </View>
         </View>
       </View>

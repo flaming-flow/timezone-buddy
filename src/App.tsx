@@ -1,5 +1,6 @@
 import React from 'react';
 import {StatusBar, Platform, View, Text, StyleSheet} from 'react-native';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {NavigationContainer} from '@react-navigation/native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
@@ -42,10 +43,11 @@ function TabIcon({name, focused}: {name: 'clock' | 'converter' | 'meeting'; focu
 
 export function App(): React.ReactElement {
   return (
-    <SafeAreaProvider>
-      <ContactsProvider>
-        <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
-        <NavigationContainer>
+    <GestureHandlerRootView style={{flex: 1}}>
+      <SafeAreaProvider>
+        <ContactsProvider>
+          <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
+          <NavigationContainer>
           <Tab.Navigator
             screenOptions={{
               headerShown: false,
@@ -96,9 +98,10 @@ export function App(): React.ReactElement {
               }}
             />
           </Tab.Navigator>
-        </NavigationContainer>
-      </ContactsProvider>
-    </SafeAreaProvider>
+          </NavigationContainer>
+        </ContactsProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
