@@ -60,12 +60,13 @@ export const TimeZoneItem = React.memo(function TimeZoneItem({
     </View>
   );
 }, (prevProps, nextProps) => {
-  // Предотвращаем ре-рендер если время и размеры не изменились
+  // Предотвращаем ре-рендер если время, размеры и колбэки не изменились
   return prevProps.item.currentTime === nextProps.item.currentTime &&
          prevProps.item.currentDate === nextProps.item.currentDate &&
          prevProps.item.id === nextProps.item.id &&
          prevProps.itemWidth === nextProps.itemWidth &&
-         prevProps.itemHeight === nextProps.itemHeight;
+         prevProps.itemHeight === nextProps.itemHeight &&
+         prevProps.onDelete === nextProps.onDelete;
 });
 
 const styles = StyleSheet.create({
