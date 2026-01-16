@@ -13,24 +13,21 @@ import {DragSortableView} from 'react-native-drag-sort';
 import DraggableFlatList, {RenderItemParams, ScaleDecorator} from 'react-native-draggable-flatlist';
 import {TimeZoneDisplay, PersonDisplay} from '../types';
 import {TimeZoneItem} from '../components/TimeZoneItem';
-import {TimeZonePicker} from '../components/TimeZonePicker';
-import {PersonDetailModal} from '../components/PersonDetailModal';
 import {ContactCard} from '../components/ContactCard';
 import {useTimeZones} from '../hooks/useTimeZones';
 import {useContacts} from '../context/ContactsContext';
+import {useModal} from '../context/ModalContext';
 
 // Layout constants
 const PADDING = 16;
 const GAP = 16;
 
 export function WorldClockScreen(): React.ReactElement {
-  const [showPicker, setShowPicker] = useState(false);
-  const [showPersonModal, setShowPersonModal] = useState(false);
-  const [editingPersonId, setEditingPersonId] = useState<string | undefined>(undefined);
   const [timeZoneScrollEnabled, setTimeZoneScrollEnabled] = useState(true);
   const {timeZones, isLoading, addTimeZone, removeTimeZone, reorderTimeZones, pauseUpdates, resumeUpdates} =
     useTimeZones();
   const {contacts, removeContact, reorderContacts, isLoading: isContactsLoading} = useContacts();
+  const {showTimeZonePicker, showPersonDetailModal, isAnyModalOpen} = useModal();
   const {width: screenWidth} = useWindowDimensions();
 
   // Row width (full screen minus padding and gap between columns)
@@ -50,16 +47,14 @@ export function WorldClockScreen(): React.ReactElement {
   const contactCardWidth = sideColWidth;
   const contactCardHeight = 170;
 
-  const handleAddPress = useCallback(() => {
-    setShowPicker(true);
-  }, []);
+  const existingZones = timeZones.map(tz => tz.ianaName);
 
-  const handleSelectZone = useCallback(
-    (ianaName: string) => {
-      addTimeZone(ianaName);
-    },
-    [addTimeZone],
-  );
+  const handleAddPress = useCallback(() => {
+    showTimeZonePicker({
+      onSelect: addTimeZone,
+      excludeZones: existingZones,
+    });
+  }, [showTimeZonePicker, addTimeZone, existingZones]);
 
   const handleDataChange = useCallback(
     (data: TimeZoneDisplay[]) => {
@@ -82,22 +77,19 @@ export function WorldClockScreen(): React.ReactElement {
     [removeTimeZone, itemWidth, itemHeight],
   );
 
-  const existingZones = timeZones.map(tz => tz.ianaName);
-
   const handleContactPress = useCallback((personId: string) => {
-    setEditingPersonId(personId);
-    setShowPersonModal(true);
-  }, []);
+    showPersonDetailModal({
+      personId,
+      onClose: () => {},
+    });
+  }, [showPersonDetailModal]);
 
   const handleAddContact = useCallback(() => {
-    setEditingPersonId(undefined);
-    setShowPersonModal(true);
-  }, []);
-
-  const handleClosePersonModal = useCallback(() => {
-    setShowPersonModal(false);
-    setEditingPersonId(undefined);
-  }, []);
+    showPersonDetailModal({
+      personId: undefined,
+      onClose: () => {},
+    });
+  }, [showPersonDetailModal]);
 
   const renderContactItem = useCallback(
     ({item, drag, isActive}: RenderItemParams<PersonDisplay>) => {
@@ -172,6 +164,22 @@ export function WorldClockScreen(): React.ReactElement {
                   <Text style={styles.emptyTitle}>No Time Zones</Text>
                   <Text style={styles.emptyText}>Add your first time zone to get started</Text>
                 </View>
+              ) : isAnyModalOpen ? (
+                // Simple view when modal is open (drag breaks modals on Mac)
+                <View style={{flexDirection: 'row', flexWrap: 'wrap'}}>
+                  {timeZones.map(item => (
+                    <View
+                      key={item.id}
+                      style={{
+                        width: itemWidth,
+                        height: itemHeight,
+                        marginTop: 4,
+                        marginBottom: 4,
+                      }}>
+                      {renderItem(item)}
+                    </View>
+                  ))}
+                </View>
               ) : (
                 <DragSortableView
                   dataSource={timeZones}
@@ -210,6 +218,23 @@ export function WorldClockScreen(): React.ReactElement {
               <View style={styles.emptyContactsContainer}>
                 <Text style={styles.emptyContactsText}>No contacts yet</Text>
               </View>
+            ) : isAnyModalOpen ? (
+              // Simple view when modal is open (drag breaks modals on Mac)
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+                {contacts.map(item => (
+                  <TouchableOpacity
+                    key={item.id}
+                    onPress={() => handleContactPress(item.id)}
+                    style={{marginBottom: 12}}>
+                    <ContactCard
+                      person={item}
+                      onDelete={removeContact}
+                      width={contactCardWidth}
+                      height={contactCardHeight}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             ) : (
               <DraggableFlatList
                 data={contacts}
@@ -223,19 +248,6 @@ export function WorldClockScreen(): React.ReactElement {
           </View>
         </View>
       </View>
-
-      <TimeZonePicker
-        visible={showPicker}
-        onClose={() => setShowPicker(false)}
-        onSelect={handleSelectZone}
-        excludeZones={existingZones}
-      />
-
-      <PersonDetailModal
-        visible={showPersonModal}
-        personId={editingPersonId}
-        onClose={handleClosePersonModal}
-      />
     </SafeAreaView>
   );
 }

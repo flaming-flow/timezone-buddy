@@ -218,7 +218,8 @@ export function MeetingPlannerScreen(): React.ReactElement {
         }
         onClose={() => setShowEndPicker(false)}
       />
-    </SafeAreaView>
+
+      </SafeAreaView>
   );
 }
 

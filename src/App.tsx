@@ -5,6 +5,7 @@ import {NavigationContainer} from '@react-navigation/native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {ContactsProvider} from './context/ContactsContext';
+import {ModalProvider} from './context/ModalContext';
 import {WorldClockStack} from './navigation/WorldClockStack';
 import {ConverterScreen} from './screens/ConverterScreen';
 import {MeetingPlannerScreen} from './screens/MeetingPlannerScreen';
@@ -46,8 +47,9 @@ export function App(): React.ReactElement {
     <GestureHandlerRootView style={{flex: 1}}>
       <SafeAreaProvider>
         <ContactsProvider>
-          <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
-          <NavigationContainer>
+          <ModalProvider>
+            <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
+            <NavigationContainer>
           <Tab.Navigator
             screenOptions={{
               headerShown: false,
@@ -99,6 +101,7 @@ export function App(): React.ReactElement {
             />
           </Tab.Navigator>
           </NavigationContainer>
+          </ModalProvider>
         </ContactsProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
