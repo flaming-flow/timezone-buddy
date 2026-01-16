@@ -66,3 +66,40 @@ export interface PersonDisplay extends Person {
   timezoneLabel: string; // Human-readable label (e.g., "New York")
 }
 
+// Meeting participant (for Meeting Planner)
+export interface MeetingParticipant {
+  id: string;
+  type: 'me' | 'contact' | 'timezone';
+  contactId?: string; // Reference to Person.id if type='contact'
+  timezone: string; // IANA timezone name
+  label: string; // Display name: "You", contact name, or city
+  workingHours: {
+    start: number; // e.g., 9.0 for 9:00 AM
+    end: number; // e.g., 18.0 for 6:00 PM
+  };
+}
+
+// Multi-zone overlap result
+export interface MultiZoneOverlapResult {
+  hasOverlap: boolean;
+  overlapHours: number;
+  // Time ranges in each participant's local timezone
+  participantTimes: Array<{
+    participantId: string;
+    label: string;
+    timezone: string;
+    startTime: string; // Formatted: "15:00"
+    endTime: string; // Formatted: "18:00"
+    isLateHours: boolean; // true if before 7am or after 9pm
+  }>;
+}
+
+// App settings
+export interface AppSettings {
+  myTimezone: string; // IANA timezone name
+  defaultWorkingHours: {
+    start: number;
+    end: number;
+  };
+}
+

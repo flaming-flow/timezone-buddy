@@ -107,6 +107,19 @@ export function PersonDetailScreen({
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {/* Header - outside ScrollView for full width */}
+      <View style={[styles.header, {paddingHorizontal: layout.spacing.medium}]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
+          <Text style={styles.cancelText}>Cancel</Text>
+        </TouchableOpacity>
+        <Text style={[styles.title, {fontSize: sizes.fontSize.large}]} numberOfLines={1}>
+          {isEditing ? 'Edit Contact' : 'New Contact'}
+        </Text>
+        <TouchableOpacity onPress={handleSave} style={[styles.headerButton, styles.headerButtonRight]}>
+          <Text style={styles.saveText}>Save</Text>
+        </TouchableOpacity>
+      </View>
+
       <KeyboardAvoidingView
         style={styles.keyboardAvoid}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -122,19 +135,6 @@ export function PersonDetailScreen({
             },
           ]}
           keyboardShouldPersistTaps="handled">
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-            <Text style={[styles.title, {fontSize: sizes.fontSize.large}]}>
-              {isEditing ? 'Edit Contact' : 'New Contact'}
-            </Text>
-            <TouchableOpacity onPress={handleSave}>
-              <Text style={styles.saveText}>Save</Text>
-            </TouchableOpacity>
-          </View>
-
           {/* Name Input */}
           <View style={styles.field}>
             <Text style={styles.label}>Name</Text>
@@ -229,9 +229,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    paddingVertical: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#ddd',
+  },
+  headerButton: {
+    minWidth: 60,
+  },
+  headerButtonRight: {
+    alignItems: 'flex-end',
   },
   title: {
+    flex: 1,
+    textAlign: 'center',
     fontWeight: '600',
     color: '#1a1a1a',
   },

@@ -99,6 +99,30 @@ export function TimeZonePicker({
         <KeyboardAvoidingView
           style={styles.keyboardAvoid}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          {/* Header - OUTSIDE container to span full modal width */}
+          <View
+            style={[
+              styles.header,
+              {
+                paddingHorizontal: layout.spacing.medium,
+                paddingVertical: layout.spacing.medium,
+              },
+            ]}>
+            <View style={styles.headerSide}>
+              <TouchableOpacity
+                onPress={handleClose}
+                accessibilityLabel="Cancel"
+                accessibilityRole="button">
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={[styles.title, {fontSize: sizes.fontSize.large}]} numberOfLines={1}>
+              Add Time Zone
+            </Text>
+            <View style={[styles.headerSide, styles.headerSideRight]} />
+          </View>
+
+          {/* Content with maxWidth constraint */}
           <View
             style={[
               styles.container,
@@ -108,28 +132,6 @@ export function TimeZonePicker({
                 width: '100%',
               },
             ]}>
-            {/* Header */}
-            <View
-              style={[
-                styles.header,
-                {
-                  paddingHorizontal: layout.spacing.medium,
-                  paddingVertical: layout.spacing.medium,
-                },
-              ]}>
-              <TouchableOpacity
-                onPress={handleClose}
-                style={styles.cancelButton}
-                accessibilityLabel="Cancel"
-                accessibilityRole="button">
-                <Text style={styles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <Text style={[styles.title, {fontSize: sizes.fontSize.large}]}>
-                Add Time Zone
-              </Text>
-              <View style={styles.placeholder} />
-            </View>
-
             {/* Search */}
             <View
               style={[
@@ -206,27 +208,26 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#ddd',
     backgroundColor: '#fff',
   },
-  cancelButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  headerSide: {
+    width: 70,
+  },
+  headerSideRight: {
+    alignItems: 'flex-end',
   },
   cancelText: {
     fontSize: 16,
     color: '#007AFF',
   },
   title: {
+    flex: 1,
+    textAlign: 'center',
     fontWeight: '600',
     color: '#1a1a1a',
-  },
-  placeholder: {
-    width: 60,
   },
   searchContainer: {
     marginTop: 16,

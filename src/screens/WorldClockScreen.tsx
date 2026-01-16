@@ -11,17 +11,13 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {DragSortableView} from 'react-native-drag-sort';
 import DraggableFlatList, {RenderItemParams, ScaleDecorator} from 'react-native-draggable-flatlist';
-import {useNavigation} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {TimeZoneDisplay, PersonDisplay} from '../types';
-import {WorldClockStackParamList} from '../types/navigation';
 import {TimeZoneItem} from '../components/TimeZoneItem';
 import {TimeZonePicker} from '../components/TimeZonePicker';
+import {PersonDetailModal} from '../components/PersonDetailModal';
 import {ContactCard} from '../components/ContactCard';
 import {useTimeZones} from '../hooks/useTimeZones';
 import {useContacts} from '../context/ContactsContext';
-
-type NavigationProp = NativeStackNavigationProp<WorldClockStackParamList, 'WorldClockMain'>;
 
 // Layout constants
 const PADDING = 16;
@@ -29,8 +25,9 @@ const GAP = 16;
 
 export function WorldClockScreen(): React.ReactElement {
   const [showPicker, setShowPicker] = useState(false);
+  const [showPersonModal, setShowPersonModal] = useState(false);
+  const [editingPersonId, setEditingPersonId] = useState<string | undefined>(undefined);
   const [timeZoneScrollEnabled, setTimeZoneScrollEnabled] = useState(true);
-  const navigation = useNavigation<NavigationProp>();
   const {timeZones, isLoading, addTimeZone, removeTimeZone, reorderTimeZones, pauseUpdates, resumeUpdates} =
     useTimeZones();
   const {contacts, removeContact, reorderContacts, isLoading: isContactsLoading} = useContacts();
@@ -87,16 +84,20 @@ export function WorldClockScreen(): React.ReactElement {
 
   const existingZones = timeZones.map(tz => tz.ianaName);
 
-  const handleContactPress = useCallback(
-    (personId: string) => {
-      navigation.navigate('PersonDetail', {personId});
-    },
-    [navigation],
-  );
+  const handleContactPress = useCallback((personId: string) => {
+    setEditingPersonId(personId);
+    setShowPersonModal(true);
+  }, []);
 
   const handleAddContact = useCallback(() => {
-    navigation.navigate('PersonDetail', {});
-  }, [navigation]);
+    setEditingPersonId(undefined);
+    setShowPersonModal(true);
+  }, []);
+
+  const handleClosePersonModal = useCallback(() => {
+    setShowPersonModal(false);
+    setEditingPersonId(undefined);
+  }, []);
 
   const renderContactItem = useCallback(
     ({item, drag, isActive}: RenderItemParams<PersonDisplay>) => {
@@ -228,6 +229,12 @@ export function WorldClockScreen(): React.ReactElement {
         onClose={() => setShowPicker(false)}
         onSelect={handleSelectZone}
         excludeZones={existingZones}
+      />
+
+      <PersonDetailModal
+        visible={showPersonModal}
+        personId={editingPersonId}
+        onClose={handleClosePersonModal}
       />
     </SafeAreaView>
   );

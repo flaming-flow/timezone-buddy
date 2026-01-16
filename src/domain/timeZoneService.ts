@@ -1,4 +1,4 @@
-import {TimeZoneEntry, ConversionResult} from '../types';
+import {TimeZoneEntry, ConversionResult, MeetingParticipant, MultiZoneOverlapResult} from '../types';
 
 /**
  * Get the current device timezone using Intl API
@@ -530,6 +530,137 @@ export function formatHour(hour: number): string {
   const h = Math.floor(hour);
   const m = Math.round((hour - h) * 60);
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+}
+
+/**
+ * Find overlapping working hours for multiple participants (N-way intersection)
+ * Returns overlap result with times in each participant's local timezone
+ */
+export function findMultiZoneOverlap(
+  participants: MeetingParticipant[],
+  referenceDate: Date = new Date(),
+): MultiZoneOverlapResult {
+  if (participants.length < 2) {
+    return {
+      hasOverlap: false,
+      overlapHours: 0,
+      participantTimes: [],
+    };
+  }
+
+  // Convert all working hours to UTC minutes from midnight
+  const workRangesInUTC = participants.map(p => {
+    const offsetMinutes = getOffsetMinutes(p.timezone, referenceDate);
+    // Convert local working hours to UTC
+    const startUTC = (p.workingHours.start * 60 - offsetMinutes + 1440) % 1440;
+    const endUTC = (p.workingHours.end * 60 - offsetMinutes + 1440) % 1440;
+    return {
+      participant: p,
+      startUTC,
+      endUTC,
+      offsetMinutes,
+    };
+  });
+
+  // Find intersection of all ranges in UTC
+  // Start with first participant's range
+  let overlapStartUTC = workRangesInUTC[0].startUTC;
+  let overlapEndUTC = workRangesInUTC[0].endUTC;
+
+  // Handle overnight shifts (when end < start in UTC)
+  const normalizeRange = (start: number, end: number) => {
+    if (end <= start) {
+      // Overnight shift - for simplicity, use daytime portion only
+      return {start, end: start + (1440 - start + end)};
+    }
+    return {start, end};
+  };
+
+  const firstRange = normalizeRange(overlapStartUTC, overlapEndUTC);
+  overlapStartUTC = firstRange.start;
+  overlapEndUTC = firstRange.end;
+
+  // Intersect with each subsequent participant
+  for (let i = 1; i < workRangesInUTC.length; i++) {
+    const range = normalizeRange(
+      workRangesInUTC[i].startUTC,
+      workRangesInUTC[i].endUTC,
+    );
+
+    overlapStartUTC = Math.max(overlapStartUTC, range.start);
+    overlapEndUTC = Math.min(overlapEndUTC, range.end);
+
+    if (overlapStartUTC >= overlapEndUTC) {
+      // No overlap
+      return {
+        hasOverlap: false,
+        overlapHours: 0,
+        participantTimes: participants.map(p => ({
+          participantId: p.id,
+          label: p.label,
+          timezone: p.timezone,
+          startTime: '--:--',
+          endTime: '--:--',
+          isLateHours: false,
+        })),
+      };
+    }
+  }
+
+  // Calculate overlap duration
+  const overlapMinutes = overlapEndUTC - overlapStartUTC;
+  const overlapHours = Math.round((overlapMinutes / 60) * 10) / 10;
+
+  // Convert overlap back to each participant's local time
+  const participantTimes = workRangesInUTC.map(({participant, offsetMinutes}) => {
+    const localStartMinutes = (overlapStartUTC + offsetMinutes + 1440) % 1440;
+    const localEndMinutes = (overlapEndUTC + offsetMinutes + 1440) % 1440;
+
+    const startHour = Math.floor(localStartMinutes / 60);
+    const startMin = localStartMinutes % 60;
+    const endHour = Math.floor(localEndMinutes / 60);
+    const endMin = localEndMinutes % 60;
+
+    // Check if these are "late hours" (before 7am or after 9pm)
+    const isLateHours = startHour < 7 || startHour >= 21 || endHour < 7 || endHour >= 21;
+
+    return {
+      participantId: participant.id,
+      label: participant.label,
+      timezone: participant.timezone,
+      startTime: `${startHour.toString().padStart(2, '0')}:${startMin.toString().padStart(2, '0')}`,
+      endTime: `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`,
+      isLateHours,
+    };
+  });
+
+  return {
+    hasOverlap: true,
+    overlapHours,
+    participantTimes,
+  };
+}
+
+/**
+ * Generate shareable text for meeting time
+ */
+export function generateMeetingShareText(
+  overlap: MultiZoneOverlapResult,
+): string {
+  if (!overlap.hasOverlap || overlap.participantTimes.length === 0) {
+    return 'No common meeting time found.';
+  }
+
+  const lines = ['📅 Meeting Time\n'];
+
+  overlap.participantTimes.forEach(pt => {
+    const tzLabel = getLabelForZone(pt.timezone);
+    lines.push(`${pt.label} (${tzLabel}): ${pt.startTime} – ${pt.endTime}`);
+  });
+
+  lines.push(`\n${overlap.overlapHours} hour${overlap.overlapHours !== 1 ? 's' : ''} overlap`);
+
+  return lines.join('\n');
 }
 
 /**

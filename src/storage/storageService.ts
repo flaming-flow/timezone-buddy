@@ -1,10 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {ConversionInput, Person} from '../types';
+import {ConversionInput, Person, AppSettings, MeetingParticipant} from '../types';
+import {getCurrentDeviceTimezone} from '../domain/timeZoneService';
 
 const STORAGE_KEYS = {
   TIME_ZONES: '@timezone_app/saved_zones',
   LAST_CONVERSION: '@timezone_app/last_conversion',
   PEOPLE: '@timezone_app/people',
+  SETTINGS: '@timezone_app/settings',
+  MEETING_PARTICIPANTS: '@timezone_app/meeting_participants',
 } as const;
 
 /**
@@ -112,9 +115,82 @@ export async function clearAllData(): Promise<void> {
       STORAGE_KEYS.TIME_ZONES,
       STORAGE_KEYS.LAST_CONVERSION,
       STORAGE_KEYS.PEOPLE,
+      STORAGE_KEYS.SETTINGS,
+      STORAGE_KEYS.MEETING_PARTICIPANTS,
     ]);
   } catch (error) {
     console.error('Failed to clear data:', error);
     throw error;
+  }
+}
+
+/**
+ * Get default app settings
+ */
+function getDefaultSettings(): AppSettings {
+  return {
+    myTimezone: getCurrentDeviceTimezone(),
+    defaultWorkingHours: {start: 9, end: 18},
+  };
+}
+
+/**
+ * Save app settings
+ */
+export async function saveSettings(settings: AppSettings): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+  } catch (error) {
+    console.error('Failed to save settings:', error);
+    throw error;
+  }
+}
+
+/**
+ * Load app settings
+ */
+export async function loadSettings(): Promise<AppSettings> {
+  try {
+    const stored = await AsyncStorage.getItem(STORAGE_KEYS.SETTINGS);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+    return getDefaultSettings();
+  } catch (error) {
+    console.error('Failed to load settings:', error);
+    return getDefaultSettings();
+  }
+}
+
+/**
+ * Save meeting participants
+ */
+export async function saveMeetingParticipants(
+  participants: MeetingParticipant[],
+): Promise<void> {
+  try {
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.MEETING_PARTICIPANTS,
+      JSON.stringify(participants),
+    );
+  } catch (error) {
+    console.error('Failed to save meeting participants:', error);
+    throw error;
+  }
+}
+
+/**
+ * Load meeting participants
+ */
+export async function loadMeetingParticipants(): Promise<MeetingParticipant[]> {
+  try {
+    const stored = await AsyncStorage.getItem(STORAGE_KEYS.MEETING_PARTICIPANTS);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+    return [];
+  } catch (error) {
+    console.error('Failed to load meeting participants:', error);
+    return [];
   }
 }
